@@ -119,8 +119,8 @@ export class BillFormComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       data = {...data, ...result}
       console.log(JSON.stringify(data));
-      this.req.sale(data).subscribe(() => console.log("hurray"))
-      // this.router.navigate(['/receipt'], {state: data});
+      this.req.sale(data).subscribe(() => this.router.navigate(['/receipt'], {state: data}));
+      this.router.navigate(['/receipt'], {state: data})
     });
     
   }

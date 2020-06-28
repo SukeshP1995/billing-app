@@ -18,7 +18,7 @@ import { BillSummaryComponent } from './bill-summary/bill-summary.component';
     ReceiptComponent,
     BillFormComponent,
     AdminDashboardComponent,
-    BillSummaryComponent
+    BillSummaryComponent,
   ],
   imports: [
     BrowserModule,
