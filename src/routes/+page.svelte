@@ -2,19 +2,34 @@
   import { page } from '$app/stores'
 	import { goto } from '$app/navigation';
   import type { PageData } from './$types';
+	import { setContext, getContext } from 'svelte';
+	import { writable } from 'svelte/store';
 
   import { superForm } from 'sveltekit-superforms/client';
   import SuperDebug from 'sveltekit-superforms/client/SuperDebug.svelte';
 
-  import Card, { Content } from '@smui/card';
-  import Select, { Option } from '@smui/select';
-  import Accordion, { Panel, Header, Content as AccordionContent } from '@smui-extra/accordion';
-  import Textfield from '@smui/textfield';
+  import Accordion, { Panel, Header, Content as PaperContent } from '@smui-extra/accordion';
 	import Button, { Label } from '@smui/button';
-
+  import Card, { Content as CardContent } from '@smui/card';
+  import Dialog, { Title as DialogTitle, Content as DialogContent, Actions as DialogActions } from '@smui/dialog';
+  import Select, { Option } from '@smui/select';
+  import Textfield from '@smui/textfield';
+	import { isType, type JSONRecord, type JSONObject, useBillStore } from '$lib/utils';
+	import TopAppBar, { Row, Section, Title } from '@smui/top-app-bar';
+	import IconButton from '@smui/icon-button';
+	
   export let data: PageData;
+  let open = false;
+  let totalAmount = 0;
+  let netAmount = 0;
+  
+  $: discount = totalAmount - netAmount;
+
   const { models } = data;
-  const { form, enhance } = superForm(data.form, { dataType: 'json' });
+  const { form } = superForm(data.form, { dataType: 'json', invalidateAll: true });
+  let billData: JSONObject;
+  const billDataStore = useBillStore();
+  setContext('billData', billDataStore);
   const { searchParams } = $page.url;
   let model = $page.url.searchParams.get('model');
   $: {
@@ -32,13 +47,72 @@
     $form.accessories[i].totalPrice = $form.accessories[i].price * $form.accessories[i].quantity;
     $form.accessories = $form.accessories;
   }
+
+  function onSubmit() {
+    billData = structuredClone($form);
+    if (isType<JSONObject[]>(billData.accessories)) {
+      billData.accessories = [{
+          name: "HALF KIT",
+          hsn: billData.halfKitHsn,
+          price: billData.halfKitPrice,
+          quantity: billData.halfKitQuantity,
+          totalPrice: billData.halfKitTotalPrice
+        }, {
+          name: "FULL KIT",
+          hsn: billData.fullKitHsn,
+          price: billData.fullKitPrice,
+          quantity: billData.fullKitQuantity,
+          totalPrice: billData.fullKitTotalPrice
+        }, ...billData.accessories].filter((obj) => {
+          if (isType<JSONRecord>(obj)) {
+            const {quantity} = obj;
+            if (isType<number>(quantity)) {
+              return quantity > 0;
+            } 
+          }
+        });
+      
+      totalAmount = billData.accessories.reduce((a: number, b) => a + (isType<JSONRecord>(b) && isType<number>(b.totalPrice) ? b.totalPrice : 0), 0)
+      open = true;
+    }
+  }
+
+  function openReceipt() {
+    if (isType<JSONRecord>(billData)) {
+      billData.totalAmount = totalAmount;
+      billData.discount = discount;
+      billData.netAmount = netAmount;
+    }
+    $billDataStore = billData;
+    console.log($billDataStore)
+    goto('/receipt');
+    open = false;
+  }
 </script>
 
+<TopAppBar
+  variant="static"
+  color={'primary'}
+>
+  <Row>
+    <Section>
+      <Title>Billing App</Title>
+    </Section>
+    <Section align="end" toolbar>
+      <Button href="/admin">
+        <Label>admin</Label>
+      </Button>
+      <IconButton class="material-icons" aria-label="Home" href='/'>
+        home
+      </IconButton>
+    </Section>
+  </Row>
+</TopAppBar>
 <SuperDebug data={$form}></SuperDebug>
 
 <div style="width: 64em;">
   <Card>
-    <Content>
+    <CardContent>
       <div class="columns margins" style="justify-content: flex-start;">
         <div>
           <Select bind:value={model} label="Select Menu">
@@ -50,8 +124,8 @@
       </div>
       {#if model}
         <Card>
-          <Content>
-            <form method="POST" use:enhance>
+          <CardContent>
+            <form on:submit={() => onSubmit()}>
               <Textfield bind:value={$form.customerName} label="Customer name" required />
               <br>
               <Textfield bind:value={$form.model} label="Model" required disabled />
@@ -72,29 +146,29 @@
               <Accordion multiple>
                 <Panel>
                   <Header>Half kit items</Header>
-                  <AccordionContent>
+                  <PaperContent>
                     {#each $form.halfKitItems as _, i}
                       <div>
                         <Textfield bind:value={$form.halfKitItems[i].name} label="Accessory name" required disabled />
                       </div>
                     {/each}
-                  </AccordionContent>
+                  </PaperContent>
                 </Panel>
                 <br>
                 <Panel>
                   <Header>Full kit items</Header>
-                  <AccordionContent>
+                  <PaperContent>
                     {#each $form.fullKitItems as _, i}
                       <div>
                         <Textfield bind:value={$form.fullKitItems[i].name} label="Accessory name" required disabled />  
                       </div>
                     {/each}
-                  </AccordionContent>
+                  </PaperContent>
                 </Panel>
                 <br>
                 <Panel>
                   <Header>Accessories</Header>
-                  <AccordionContent>
+                  <PaperContent>
                     {#each $form.accessories as _, i}
                       <div>
                         <Textfield bind:value={$form.accessories[i].name} label="Accessory name" required disabled />
@@ -106,7 +180,7 @@
                         <Textfield bind:value={$form.accessories[i].totalPrice} label="Accessory total price" type="number" required disabled />
                       </div>
                     {/each}
-                  </AccordionContent>
+                  </PaperContent>
                 </Panel>
               </Accordion>
               <br>
@@ -115,9 +189,33 @@
                 <Label>Submit</Label>
               </Button>
             </form>
-          </Content>
+          </CardContent>
         </Card>
       {/if}
-    </Content>
+    </CardContent>
   </Card>
+  
+  <Dialog
+    bind:open
+    aria-labelledby="simple-title"
+    aria-describedby="simple-content"
+  >
+    <!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+    <DialogTitle id="simple-title">Summary</DialogTitle>
+    <DialogContent id="simple-content">
+      <Textfield bind:value={totalAmount} label="Total Amount" type="number" required disabled />
+      <br>
+      <Textfield bind:value={discount} label="Discount" type="number" required disabled />
+      <br>
+      <Textfield bind:value={netAmount} label="Net Amount" type="number" required />
+    </DialogContent>
+    <DialogActions>
+      <Button on:click={() => {open = false}}>
+        <Label>Close</Label>
+      </Button>
+      <Button on:click={() => openReceipt()}>
+        <Label>Submit</Label>
+      </Button>
+    </DialogActions>
+  </Dialog>
 </div>
