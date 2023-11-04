@@ -2,10 +2,6 @@
   import { page } from '$app/stores'
 	import { goto } from '$app/navigation';
   import type { PageData } from './$types';
-  import { stringify } from 'devalue';
-
-  import { superForm } from 'sveltekit-superforms/client';
-  import SuperDebug from 'sveltekit-superforms/client/SuperDebug.svelte';
 
   import Accordion, { Panel, Header, Content as PaperContent } from '@smui-extra/accordion';
 	import Button, { Label } from '@smui/button';
@@ -16,7 +12,9 @@
 	import { isType, type JSONRecord, type JSONObject, useBillStore } from '$lib/utils';
 	import TopAppBar, { Row, Section, Title } from '@smui/top-app-bar';
 	import IconButton from '@smui/icon-button';
-	
+	import { stringify } from 'devalue';
+  import { superForm } from 'sveltekit-superforms/client';
+
   export let data: PageData;
   let open = false;
   let totalAmount = 0;
@@ -203,7 +201,6 @@
     aria-labelledby="simple-title"
     aria-describedby="simple-content"
   >
-    <!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
     <DialogTitle id="simple-title">Summary</DialogTitle>
     <DialogContent id="simple-content">
       <Textfield bind:value={totalAmount} label="Total Amount" type="number" required disabled />

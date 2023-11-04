@@ -1,39 +1,8 @@
-import { Accessory } from '$lib/server/accessory.model';
-import type { Actions, PageServerLoad } from './$types';
-import { z } from "zod";
+import { Accessory } from '$lib/server/accessory.model.js';
+import { schema } from '$lib/server/utils.js';
+import type { z } from 'zod';
+import type { PageServerLoad } from './$types';
 import { defaultValues, superValidate } from 'sveltekit-superforms/server';
-
-const schema = z.object({
-  customerName: z.string().min(1),
-  model: z.string().min(1),
-  halfKitItems: z.array(
-    z.object({
-      name: z.string().min(1),
-    })
-  ),
-  fullKitItems: z.array(
-    z.object({
-      name: z.string().min(1),
-    })
-  ),
-  halfKitHsn: z.string().min(1),
-  fullKitHsn: z.string().min(1),
-  halfKitPrice: z.number(),
-  fullKitPrice: z.number(),
-  halfKitQuantity: z.number(),
-  fullKitQuantity: z.number(),
-  halfKitTotalPrice: z.number(),
-  fullKitTotalPrice: z.number(),
-  accessories: z.array(
-    z.object({
-      name: z.string().min(1),
-      hsn: z.string().min(1).optional(),
-      price: z.number().optional(),
-      quantity: z.number(),
-      totalPrice: z.number().optional()
-    })
-  ),
-});
 
 export const load = (async ({url}) => {
   const model = url.searchParams.get('model');
