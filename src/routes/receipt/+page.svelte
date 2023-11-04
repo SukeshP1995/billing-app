@@ -8,6 +8,7 @@
   let discount: string;
   let netAmount: string;
   let gst: string;
+  let sno: string;
 
   const today = convertDate(Date.now());
   const billData = useBillStore();
@@ -19,6 +20,9 @@
     }
     if (isType<string>($billData.customerName)) {
       customerName = $billData.customerName;
+    }
+    if (isType<string>($billData.sno)) {
+      sno = $billData.sno;
     }
     if (isType<string>($billData.model) && isType<number>($billData.netAmount)) {
       model = $billData.model;
@@ -67,7 +71,7 @@
         <p class="p-0-8">Model: { model }</p>
       </div>
       <div class="bill-reg-paymode">
-        <p class="p-0-8">Bill No.: 0123</p>
+        <p class="p-0-8">Bill No.: {sno}</p>
         <p class="p-0-8">Date: { today }</p>
         <p class="p-0-8">Pay Mode: Cash</p>
       </div>
