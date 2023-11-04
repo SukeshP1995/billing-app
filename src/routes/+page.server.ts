@@ -27,10 +27,10 @@ const schema = z.object({
   accessories: z.array(
     z.object({
       name: z.string().min(1),
-      hsn: z.string().min(1),
-      price: z.number(),
+      hsn: z.string().min(1).optional(),
+      price: z.number().optional(),
       quantity: z.number(),
-      totalPrice: z.number()
+      totalPrice: z.number().optional()
     })
   ),
 });
@@ -58,11 +58,3 @@ export const load = (async ({url}) => {
   }
   return { models, form };
 }) satisfies PageServerLoad;
-
-export const actions = {
-	default: async ({request}) => {
-		// TODO log the user in
-    const form = await superValidate(request, schema);
-    console.log('POST', form);
-	},
-} satisfies Actions;
