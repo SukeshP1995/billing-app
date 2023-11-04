@@ -1,4 +1,3 @@
-import { useWritable } from "./use-shared-store";
 import { persisted } from "./use-persisted-store";
 
 // place files you want to import through the `$lib` alias in this folder.

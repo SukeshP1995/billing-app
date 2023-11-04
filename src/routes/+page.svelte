@@ -2,8 +2,7 @@
   import { page } from '$app/stores'
 	import { goto } from '$app/navigation';
   import type { PageData } from './$types';
-	import { setContext, getContext } from 'svelte';
-	import { writable } from 'svelte/store';
+  import { stringify } from 'devalue';
 
   import { superForm } from 'sveltekit-superforms/client';
   import SuperDebug from 'sveltekit-superforms/client/SuperDebug.svelte';
@@ -29,7 +28,6 @@
   const { form } = superForm(data.form, { dataType: 'json', invalidateAll: true });
   let billData: JSONObject;
   const billDataStore = useBillStore();
-  setContext('billData', billDataStore);
   const { searchParams } = $page.url;
   let model = $page.url.searchParams.get('model');
   $: {
@@ -44,7 +42,7 @@
   $: $form.fullKitTotalPrice = $form.fullKitQuantity * $form.fullKitPrice;
 
   function onAccessoryPriceChange(i: number) {
-    $form.accessories[i].totalPrice = $form.accessories[i].price * $form.accessories[i].quantity;
+    $form.accessories[i].totalPrice = $form.accessories[i].price! * $form.accessories[i].quantity;
     $form.accessories = $form.accessories;
   }
 
@@ -73,20 +71,26 @@
         });
       
       totalAmount = billData.accessories.reduce((a: number, b) => a + (isType<JSONRecord>(b) && isType<number>(b.totalPrice) ? b.totalPrice : 0), 0)
+      netAmount = totalAmount;
       open = true;
     }
   }
 
-  function openReceipt() {
+  async function openReceipt() {
     if (isType<JSONRecord>(billData)) {
       billData.totalAmount = totalAmount;
       billData.discount = discount;
       billData.netAmount = netAmount;
+      const {sno} = await (await fetch('/', {
+        method: 'POST',
+        body: stringify(billData)
+      })).json();
+      billData.sno = sno;
+      
+      $billDataStore = billData;
+      goto('/receipt');
+      open = false;
     }
-    $billDataStore = billData;
-    console.log($billDataStore)
-    goto('/receipt');
-    open = false;
   }
 </script>
 
@@ -108,7 +112,6 @@
     </Section>
   </Row>
 </TopAppBar>
-<SuperDebug data={$form}></SuperDebug>
 
 <div style="width: 64em;">
   <Card>
