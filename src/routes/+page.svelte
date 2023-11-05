@@ -27,7 +27,7 @@
   let billData: JSONObject;
   const billDataStore = useBillStore();
   const { searchParams } = $page.url;
-  let model = $page.url.searchParams.get('model');
+  let model = searchParams.get('model');
   $: {
     if (model && model != searchParams.get('model')) {
       let query = new URLSearchParams(searchParams.toString());
@@ -116,7 +116,7 @@
     <CardContent>
       <div class="columns margins" style="justify-content: flex-start;">
         <div>
-          <Select bind:value={model} label="Select Menu">
+          <Select bind:value={model} label="Model">
             {#each models as model}
               <Option value={model}>{model}</Option>
             {/each}
